@@ -1,0 +1,116 @@
+{
+	"name": "PL_SendEmail",
+	"properties": {
+		"activities": [
+			{
+				"name": "WebSendEmail",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "EXEC_PL_MetaDriven",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@activity('WebGetURL').output.value",
+						"type": "Expression"
+					},
+					"method": "POST",
+					"body": {
+						"value": "{\n    \"runid\" : \"@{activity('EXEC_PL_MetaDriven').output.pipelineRunId}\",\n    \"dataFactoryName\" : \"@{pipeline().DataFactory}\", \n    \"pipelineName\" : \"@{activity('EXEC_PL_MetaDriven').output.pipelineName}\",\n    \"status\" : 'Succeeded',\n    \"message\" : ''\n}\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "EXEC_PL_MetaDriven",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "WebGetURL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_MetaDriven",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "WebSendEmailFail",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "EXEC_PL_MetaDriven",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@activity('WebGetURL').output.value",
+						"type": "Expression"
+					},
+					"method": "POST",
+					"body": {
+						"value": "{\n    \"runid\" : \"@{activity('EXEC_PL_MetaDriven').output.pipelineRunId}\",\n    \"dataFactoryName\" : \"@{pipeline().DataFactory}\", \n    \"pipelineName\" : \"@{activity('EXEC_PL_MetaDriven').output.pipelineName}\",\n    \"status\" : 'Failed',\n    \"message\" :  \"@{ replace(activity('EXEC_PL_MetaDriven').error.Message,'\"' ,'' ) } \",\n}\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "WebGetURL",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@pipeline().globalParameters.SecretURLParam",
+						"type": "Expression"
+					},
+					"method": "GET",
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-12-04T12:26:07Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

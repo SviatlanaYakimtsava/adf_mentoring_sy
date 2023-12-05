@@ -1,0 +1,63 @@
+{
+	"name": "PL_Master_Movie",
+	"properties": {
+		"activities": [
+			{
+				"name": "AC_MoveFiles_to_DataLake",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_CopyFiles_To_DataLake",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "AC_MoveData_To_DB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "AC_MoveFiles_to_DataLake",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_MoveData_To_DB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "AC_MoveFiles_To_Archive",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "AC_MoveData_To_DB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_MoveFiles_To_Archive",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-11-09T11:01:51Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

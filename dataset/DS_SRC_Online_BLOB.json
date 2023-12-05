@@ -1,0 +1,19 @@
+{
+	"name": "DS_SRC_Online_BLOB",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_online_container",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "online"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,402 @@
+{
+	"name": "PL_MetaDriven",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get_FileName",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Trunctate_stgTables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_DataLake_MetadataDriven",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "AC_FE_Copy_File",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SP_GetInformationAboutPipline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get_FileName').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CopyData",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "AC_LO_Param",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "FileName",
+											"value": "$$FILENAME"
+										},
+										{
+											"name": "PiplineID",
+											"value": {
+												"value": "@pipeline().RunId",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"dataIntegrationUnits": {
+									"value": "@activity('AC_LO_Param').output.firstRow.DIUvalue",
+									"type": "Expression"
+								},
+								"translator": {
+									"value": "@json(activity('AC_LO_Param').output.firstRow.jsonMapping)",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_Files_Param",
+									"type": "DatasetReference",
+									"parameters": {
+										"FileName": "@item().name",
+										"ContainerName": {
+											"value": "@activity('AC_LO_Param').output.firstRow.containerName",
+											"type": "Expression"
+										},
+										"FolderName": {
+											"value": "@activity('AC_LO_Param').output.firstRow.folderName",
+											"type": "Expression"
+										},
+										"ColumnDel": {
+											"value": "@activity('AC_LO_Param').output.firstRow.columndelimiter",
+											"type": "Expression"
+										},
+										"Encod": {
+											"value": "@activity('AC_LO_Param').output.firstRow.encodingval",
+											"type": "Expression"
+										},
+										"Escapech": {
+											"value": "@activity('AC_LO_Param').output.firstRow.escapecharacter",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_TableParam",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@activity('AC_LO_Param').output.firstRow.tableName",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "@activity('AC_LO_Param').output.firstRow.schemaName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "AC_LO_Param",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "select * from [etl].[tControlMetadata] where sourceFile = iif('@{item().name}' like 'rating%', 'ratings_part*.csv','@{item().name}')",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_SRC_M_Movie",
+									"type": "DatasetReference"
+								}
+							}
+						},
+						{
+							"name": "SP_GetInformationAboutCopyActivity",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "CopyData",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[etl].[GetInformationAboutCopyActivity]",
+								"storedProcedureParameters": {
+									"ActivityName": {
+										"value": {
+											"value": "@concat('CopyData from ',item().name)",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"Stringjson": {
+										"value": {
+											"value": "@string(activity('CopyData').output)",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PiplineRunID": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "SP_GetErrorHandling",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "CopyData",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[etl].[GetErrorHandling]",
+								"storedProcedureParameters": {
+									"ActivityName": {
+										"value": {
+											"value": "@concat('CopyData from ',item().name)",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"DateError": {
+										"value": {
+											"value": "@{utcnow()}",
+											"type": "Expression"
+										},
+										"type": "DateTime"
+									},
+									"ErrorCode": {
+										"value": {
+											"value": "@{activity('CopyData').Output.errors[0].Code}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"ErrorMessage": {
+										"value": {
+											"value": "@{activity('CopyData').output.errors[0].Message}",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"FailureType": {
+										"value": {
+											"value": "@activity('CopyData').error.failureType\n\n",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"PiplineRunID": {
+										"value": {
+											"value": "@pipeline().RunId",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Trunctate_stgTables",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "TRUNCATE TABLE stg.credits;\nTRUNCATE TABLE stg.movies_metadata;\nTRUNCATE TABLE stg.ratings;"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "SP_GetInformationAboutPipline",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Get_FileName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[etl].[GetInformationAboutPipline]",
+					"storedProcedureParameters": {
+						"PiplineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PiplineRunID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"variables": {
+			"ColumnDel": {
+				"type": "String"
+			},
+			"TablePar": {
+				"type": "String"
+			},
+			"TableParCoun": {
+				"type": "Array"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-12-04T12:12:43Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

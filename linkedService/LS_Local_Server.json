@@ -1,0 +1,23 @@
+{
+	"name": "LS_Local_Server",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_azurekeydb",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "secretloc-db",
+				"secretVersion": "31a973d45faf41ad89d9b54aa2a6d583"
+			}
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntimeSH",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

@@ -1,0 +1,20 @@
+{
+	"name": "DS_DST_Online_DataLake",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "azurementoringdatalakesy",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "online",
+				"fileSystem": "raw"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

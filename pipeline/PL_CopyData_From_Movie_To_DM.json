@@ -1,0 +1,98 @@
+{
+	"name": "PL_CopyData_From_Movie_To_DM",
+	"properties": {
+		"activities": [
+			{
+				"name": "AC_Truncate_DM_Tables",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "LS_DB_DataMart",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "Truncate table [dbo].[DimMovie];\nTruncate table [dbo].[DimOnlineService];\nTruncate table dbo.FactOnlinePurchase;\nTruncate table FactOnlinePurchase_MonthlySnapshot;"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "MoveData_to_DM",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "AC_Truncate_DM_Tables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_Movie_DM",
+						"type": "DataFlowReference"
+					},
+					"integrationRuntime": {
+						"referenceName": "Azure-IR-M8",
+						"type": "IntegrationRuntimeReference"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "MoveData_to_DM_Fact",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "MoveData_to_DM",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_Fact_DB",
+						"type": "DataFlowReference"
+					},
+					"integrationRuntime": {
+						"referenceName": "Azure-IR-M8",
+						"type": "IntegrationRuntimeReference"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-11-13T06:11:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

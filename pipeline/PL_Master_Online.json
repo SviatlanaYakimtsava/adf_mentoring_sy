@@ -1,0 +1,63 @@
+{
+	"name": "PL_Master_Online",
+	"properties": {
+		"activities": [
+			{
+				"name": "AC_MoveFiles_to_DataLake",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_CopyOnlineFiles_To_DataLake",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "AC_MoveData_To_DB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "AC_MoveFiles_to_DataLake",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_CopyOnlineFiles_To_DB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "AC_MoveFiles_To_Archive",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "AC_MoveData_To_DB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_MoveOnlineFiles_To_Archive",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-11-09T11:28:13Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
