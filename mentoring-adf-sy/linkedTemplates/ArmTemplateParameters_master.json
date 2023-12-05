@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "mentoring-adf-sy"
+		},
+		"LS_azurementoringausy_connectionString": {
+			"value": ""
+		},
+		"azurementoringdatalakesy_accountKey": {
+			"value": ""
+		},
+		"AzureKeyVaultSY_properties_typeProperties_baseUrl": {
+			"value": "https://mentoring-key-vault-sy.vault.azure.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_connectionString_secretName": {
+			"value": "secretdb-con"
+		},
+		"LS_DB_DataMart_properties_typeProperties_connectionString_secretName": {
+			"value": "secretDataMart"
+		},
+		"LS_Local_Server_properties_typeProperties_connectionString_secretName": {
+			"value": "secretloc-db"
+		},
+		"LS_azurekeydb_properties_typeProperties_baseUrl": {
+			"value": "https://KeyValue-db.vault.azure.net/"
+		},
+		"LS_online_container_sasUri": {
+			"value": ""
+		},
+		"azurementoringdatalakesy_properties_typeProperties_url": {
+			"value": "https://azurementoringdatalakesy.dfs.core.windows.net"
+		},
+		"azurementoringstoragesy_sasUri": {
+			"value": ""
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

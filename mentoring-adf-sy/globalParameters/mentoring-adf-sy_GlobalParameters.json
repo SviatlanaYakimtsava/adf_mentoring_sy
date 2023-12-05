@@ -1,0 +1,6 @@
+{
+	"SecretURLParam": {
+		"type": "string",
+		"value": "https://keyvalueurl.vault.azure.net/secrets/secretURL/4606e0d217914a2183872ff1e9034294?api-version=7.3"
+	}
+}
